@@ -18,6 +18,8 @@ interface AuthContextType {
   currentUser: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   loginWithGoogle: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   registerWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
@@ -31,6 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = () => setAuthError(null);
 
   // Sync profile details from Firestore
   const syncProfile = async (firebaseUser: User) => {
@@ -59,14 +64,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      if (firebaseUser) {
-        setCurrentUser(firebaseUser);
-        await syncProfile(firebaseUser);
-      } else {
-        setCurrentUser(null);
-        setUserProfile(null);
+      try {
+        if (firebaseUser) {
+          setCurrentUser(firebaseUser);
+          await syncProfile(firebaseUser);
+        } else {
+          setCurrentUser(null);
+          setUserProfile(null);
+        }
+      } catch (err: any) {
+        console.error("Initialization sync failed:", err);
+        setAuthError(err.message || String(err));
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
@@ -136,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentUser,
         userProfile,
         loading,
+        authError,
+        clearAuthError,
         loginWithGoogle,
         loginWithEmail,
         registerWithEmail,

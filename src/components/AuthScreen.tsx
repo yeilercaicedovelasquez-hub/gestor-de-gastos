@@ -4,7 +4,14 @@ import { LogIn, UserPlus, HelpCircle, Key, Mail, User as UserIcon, Lock, Sparkle
 import { motion, AnimatePresence } from "motion/react";
 
 export function AuthScreen() {
-  const { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword } = useAuth();
+  const { 
+    loginWithGoogle, 
+    loginWithEmail, 
+    registerWithEmail, 
+    resetPassword,
+    authError,
+    clearAuthError
+  } = useAuth();
   
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [email, setEmail] = useState("");
@@ -34,6 +41,7 @@ export function AuthScreen() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    if (clearAuthError) clearAuthError();
 
     if (!handleValidate()) return;
 
@@ -49,12 +57,18 @@ export function AuthScreen() {
         setSuccess("Se ha enviado un correo para restablecer tu contraseña. Revisa tu bandeja de entrada.");
       }
     } catch (err: any) {
-      setError(
-        err.code === "auth/user-not-found" ? "No existe un usuario con este correo electrónico." :
-        err.code === "auth/wrong-password" ? "Contraseña incorrecta." :
-        err.code === "auth/email-already-in-use" ? "El correo electrónico ya está registrado." :
-        err.message || "Ocurrió un error inesperado."
-      );
+      console.error("Auth submit error:", err);
+      if (err.code === "auth/operation-not-allowed") {
+        setError("El registro por Email/Contraseña no está habilitado en tu consola Firebase. Por favor usa 'Google Cloud SSO' o habilita el proveedor de Email/Password en Authentication > Sign-in method.");
+      } else {
+        setError(
+          err.code === "auth/user-not-found" ? "No existe un usuario con este correo electrónico." :
+          err.code === "auth/wrong-password" ? "Contraseña incorrecta." :
+          err.code === "auth/email-already-in-use" ? "El correo electrónico ya está registrado." :
+          err.code === "auth/invalid-credential" ? "Credenciales de inicio de sesión inválidas o expiradas." :
+          err.message || "Ocurrió un error inesperado al iniciar sesión."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -63,10 +77,12 @@ export function AuthScreen() {
   const handleGoogleLogin = async () => {
     setError(null);
     setLoading(true);
+    if (clearAuthError) clearAuthError();
     try {
       await loginWithGoogle();
     } catch (err: any) {
-      setError("Error al iniciar sesión con Google.");
+      console.error("Google Auth error:", err);
+      setError("Error al iniciar sesión con Google. Inténtalo de nuevo o revisa la consola para más detalles.");
     } finally {
       setLoading(false);
     }
@@ -93,6 +109,21 @@ export function AuthScreen() {
             Control de gastos y consejero financiero autónomo con IA
           </p>
         </div>
+
+        {authError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-red-950/20 border border-red-500/30 text-red-200 text-xs rounded-xl flex items-start gap-2 shadow-lg"
+          >
+            <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-red-400" />
+            <div>
+              <p className="font-bold text-red-300">Error en Base de Datos / Conexión:</p>
+              <p className="opacity-90 font-mono text-[10px] break-all leading-tight mt-1">{authError}</p>
+              <p className="text-[10px] mt-1.5 text-slate-400">Si este error persiste, favor revisar que el Firestore esté aprovisionado o que las reglas estén desplegadas.</p>
+            </div>
+          </motion.div>
+        )}
 
         {error && (
           <motion.div
