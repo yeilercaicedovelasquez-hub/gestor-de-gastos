@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFinance } from "../contexts/FinanceContext";
 import { 
   TrendingUp, 
@@ -39,6 +39,9 @@ export function DashboardView() {
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
+  // Active month selector state defaulting to current calendar month (YYYY-MM format)
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
+
   // Quick transaction state
   const [txType, setTxType] = useState<"expense" | "income">("expense");
   const [amount, setAmount] = useState("");
@@ -48,23 +51,37 @@ export function DashboardView() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  // Financial calculations
-  const totalIncomes = incomes.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+  // Sync form date default when active month changes to avoid out-of-month entries
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (todayStr.startsWith(selectedMonth)) {
+      setDate(todayStr);
+    } else {
+      setDate(`${selectedMonth}-01`);
+    }
+  }, [selectedMonth]);
+
+  // Scoped list of movements for the chosen month
+  const currentMonthExpenses = expenses.filter(e => e.date.startsWith(selectedMonth));
+  const currentMonthIncomes = incomes.filter(i => i.date.startsWith(selectedMonth));
+
+  // Financial calculations (scoped to currentMonth)
+  const totalIncomes = currentMonthIncomes.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = currentMonthExpenses.reduce((sum, item) => sum + item.amount, 0);
   const netBalance = totalIncomes - totalExpenses;
   const savingsRate = totalIncomes > 0 ? ((totalIncomes - totalExpenses) / totalIncomes) * 100 : 0;
 
-  // Fondo de Ahorro calculations
+  // Fondo de Ahorro calculations (scoped to currentMonth for monthly deposit/withdrawal flow)
   const checkIsSavingsFund = (desc: string) => {
     const descLower = desc.toLowerCase();
     return descLower.includes("[fondo de ahorro]") || descLower.includes("fondo de ahorro") || descLower.includes("[ahorro]");
   };
-  const savingsFundWithdrawals = incomes.filter(i => checkIsSavingsFund(i.description)).reduce((sum, item) => sum + item.amount, 0);
-  const savingsFundDeposits = expenses.filter(e => checkIsSavingsFund(e.description)).reduce((sum, item) => sum + item.amount, 0);
+  const savingsFundWithdrawals = currentMonthIncomes.filter(i => checkIsSavingsFund(i.description)).reduce((sum, item) => sum + item.amount, 0);
+  const savingsFundDeposits = currentMonthExpenses.filter(e => checkIsSavingsFund(e.description)).reduce((sum, item) => sum + item.amount, 0);
   const savingsFundTotal = savingsFundDeposits - savingsFundWithdrawals;
 
-  // Aggregate expenditures by categories
-  const categoryTotals = expenses.reduce((acc, current) => {
+  // Aggregate expenditures by categories (scoped to currentMonth)
+  const categoryTotals = currentMonthExpenses.reduce((acc, current) => {
     acc[current.category] = (acc[current.category] || 0) + current.amount;
     return acc;
   }, {} as Record<string, number>);
@@ -84,18 +101,17 @@ export function DashboardView() {
     color: COLORS[key as ExpenseCategory] || "#6B7280"
   }));
 
-  // Daily totals for Area Charts (Incomes vs Expenses)
-  // Let's bundle by date mapping the last 7 active entries
+  // Daily totals for Area Charts (Incomes vs Expenses) - scoped to active month
   const allDates = Array.from(
     new Set([
-      ...expenses.map(d => d.date),
-      ...incomes.map(d => d.date)
+      ...currentMonthExpenses.map(d => d.date),
+      ...currentMonthIncomes.map(d => d.date)
     ])
-  ).sort().slice(-7); // Last 7 active days
+  ).sort(); // Active days in this month
 
   const dailyChartData = allDates.map(d => {
-    const dayExpenses = expenses.filter(e => e.date === d).reduce((sub, item) => sub + item.amount, 0);
-    const dayIncomes = incomes.filter(i => i.date === d).reduce((sub, item) => sub + item.amount, 0);
+    const dayExpenses = currentMonthExpenses.filter(e => e.date === d).reduce((sub, item) => sub + item.amount, 0);
+    const dayIncomes = currentMonthIncomes.filter(i => i.date === d).reduce((sub, item) => sub + item.amount, 0);
     return {
       date: d.split("-").slice(1).join("/"), // MM/DD formatting
       gastos: dayExpenses,
@@ -104,8 +120,8 @@ export function DashboardView() {
   });
 
   const recentMovements = [
-    ...expenses.map(e => ({ ...e, type: "expense" as const })),
-    ...incomes.map(i => ({ ...i, type: "income" as const }))
+    ...currentMonthExpenses.map(e => ({ ...e, type: "expense" as const })),
+    ...currentMonthIncomes.map(i => ({ ...i, type: "income" as const }))
   ]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5);
@@ -212,17 +228,25 @@ export function DashboardView() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
         <div className="relative z-10">
           <h1 className="text-lg font-bold text-white tracking-tight">¡Hola, un gusto saludarte!</h1>
-          <p className="text-xs text-slate-450 mt-1 max-w-xl font-medium">Bienvenido a tu sistema inteligente de control financiero con IA autónoma. Aquí tienes una visión completa de tus activos.</p>
+          <p className="text-xs text-slate-450 mt-1 max-w-xl font-medium">Bienvenido a tu sistema inteligente de control financiero. Aquí tienes una visión completa de tus activos.</p>
         </div>
-        <div className="relative z-10 flex gap-2 w-full sm:w-auto">
-          <button 
-            type="button"
-            onClick={() => setShowConfirmReset(true)}
-            className="flex-1 sm:flex-initial px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 hover:border-rose-500/30 text-rose-455 font-bold text-[10px] tracking-wider uppercase rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-rose-500/5 duration-200 active:scale-95"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-            Reiniciar Proyecto
-          </button>
+        <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto shrink-0">
+          <div className="flex items-center gap-2.5 px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl">
+            <Calendar className="w-4 h-4 text-indigo-400 shrink-0" />
+            <div className="flex flex-col leading-none">
+              <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Mes Activo</span>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedMonth(e.target.value);
+                  }
+                }}
+                className="bg-transparent border-none text-white text-xs font-semibold focus:outline-none cursor-pointer [color-scheme:dark] pr-1"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -601,6 +625,18 @@ export function DashboardView() {
           </div>
         </div>
 
+      </div>
+
+      {/* Discrete Reset Option */}
+      <div className="pt-8 flex justify-center pb-4">
+        <button
+          type="button"
+          onClick={() => setShowConfirmReset(true)}
+          className="text-[10px] text-zinc-600 hover:text-rose-400 font-medium transition-colors duration-200 flex items-center gap-1.5 opacity-40 hover:opacity-100 cursor-pointer"
+        >
+          <span>Opciones avanzadas:</span>
+          <span className="underline decoration-dotted">Mantenimiento y reinicio de la base de datos</span>
+        </button>
       </div>
 
     </div>
