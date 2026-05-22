@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "user_profile": {
+      "title": "User Profile",
+      "description": "Public and private profile details of a registered tracker user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique user identifier matching request.auth.uid" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Display name of the user" },
+        "createdAt": { "type": "string", "description": "Timestamp when the profile was generated" }
+      },
+      "required": ["userId", "email"]
+    },
+    "expense": {
+      "title": "Expense Record",
+      "description": "A single financial expense stored in the user's tracker",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique expense record identifier" },
+        "userId": { "type": "string", "description": "Owner userId" },
+        "amount": { "type": "number", "description": "The monetary amount spent" },
+        "category": { "type": "string", "description": "Category of expense: comida, transporte, entretenimiento, estudio, salud, otros" },
+        "date": { "type": "string", "description": "Financial date of expense (YYYY-MM-DD)" },
+        "description": { "type": "string", "description": "User-provided note or description of purchase" },
+        "createdAt": { "type": "string", "description": "Strict server timestamp or record creation string" }
+      },
+      "required": ["id", "userId", "amount", "category", "date", "description"]
+    },
+    "income": {
+      "title": "Income Record",
+      "description": "A single financial income record associated with the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique income record identifier" },
+        "userId": { "type": "string", "description": "Owner userId" },
+        "amount": { "type": "number", "description": "The monetary income value" },
+        "date": { "type": "string", "description": "Financial date of income (YYYY-MM-DD)" },
+        "description": { "type": "string", "description": "User-provided description of the income source" },
+        "createdAt": { "type": "string", "description": "Record creation time" }
+      },
+      "required": ["id", "userId", "amount", "date", "description"]
+    },
+    "ai_recommendation": {
+      "title": "AI Financial Recommendation",
+      "description": "Gemini AI-generated smart insights and budgeting suggestions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique recommendations sheet identifier" },
+        "userId": { "type": "string", "description": "Owner userId" },
+        "analysis": { "type": "string", "description": "Comprehensive Gemini breakdown" },
+        "suggestions": { "type": "array", "description": "Array of specific financial suggestions" },
+        "generatedAt": { "type": "string", "description": "Generation timestamp" }
+      },
+      "required": ["id", "userId", "analysis", "suggestions", "generatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user_profile",
+      "description": "Core profile location per user"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "expense",
+      "description": "Personal expenses of the user"
+    },
+    "/users/{userId}/incomes/{incomeId}": {
+      "schema": "income",
+      "description": "Personal incomes of the user"
+    },
+    "/users/{userId}/recommendations/{recommendationId}": {
+      "schema": "ai_recommendation",
+      "description": "Personal financial insights"
+    }
+  }
+}

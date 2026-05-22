@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 1. User Profile Collection Rules
+    match /users/{userId} {
+      // Validate user structure
+      function isValidUser(data) {
+        return data.userId == request.auth.uid 
+            && data.email is string && data.email.size() <= 128
+            && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 128));
+      }
+
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email']);
+      allow delete: if false; // Profiles are permanent
+
+      // 2. Expenses Subcollection Rules
+      match /expenses/{expenseId} {
+        function isValidExpense(data) {
+          return data.id == expenseId
+              && data.userId == request.auth.uid
+              && data.amount is number && data.amount >= 0
+              && data.category is string && data.category.size() <= 64
+              && data.date is string && data.date.size() == 10 // YYYY-MM-DD
+              && data.description is string && data.description.size() <= 500;
+        }
+
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(expenseId) && isValidExpense(incoming());
+        allow update: if isOwner(userId) && isValidId(expenseId) && isValidExpense(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'category', 'date', 'description']);
+        allow delete: if isOwner(userId);
+      }
+
+      // 3. Incomes Subcollection Rules
+      match /incomes/{incomeId} {
+        function isValidIncome(data) {
+          return data.id == incomeId
+              && data.userId == request.auth.uid
+              && data.amount is number && data.amount >= 0
+              && data.date is string && data.date.size() == 10 // YYYY-MM-DD
+              && data.description is string && data.description.size() <= 500;
+        }
+
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(incomeId) && isValidIncome(incoming());
+        allow update: if isOwner(userId) && isValidId(incomeId) && isValidIncome(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'date', 'description']);
+        allow delete: if isOwner(userId);
+      }
+
+      // 4. AI Recommendations Subcollection Rules
+      match /recommendations/{recId} {
+        function isValidRec(data) {
+          return data.id == recId
+              && data.userId == request.auth.uid
+              && data.analysis is string && data.analysis.size() <= 10000
+              && data.suggestions is list && data.suggestions.size() <= 20
+              && data.generatedAt is string;
+        }
+
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(recId) && isValidRec(incoming());
+        allow update: if false; // Recommendations are immutable once generated
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

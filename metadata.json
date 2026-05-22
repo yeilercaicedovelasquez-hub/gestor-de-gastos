@@ -1,0 +1,6 @@
+{
+  "name": "S'C ENGINEER - Smart Expense Tracker AI",
+  "description": "Smart Expense Tracker AI allows you to manage expenses, incomes, view dynamic charts, and get automated financial advice powered by Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
