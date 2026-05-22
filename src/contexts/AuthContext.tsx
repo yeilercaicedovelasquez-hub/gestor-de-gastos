@@ -85,6 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // Forces Google to show the account selection dialog, enabling log in with any account
+    provider.setCustomParameters({ prompt: "select_account" });
     try {
       await signInWithPopup(auth, provider);
     } catch (err: any) {
