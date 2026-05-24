@@ -135,7 +135,7 @@ export function TransactionsView() {
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(30, 41, 59); // deep slate
-    doc.text("S'C ENGINEER :: Smart Expense Tracker AI", 14, 20);
+    doc.text("S'C ENGINEER :: Smart Expense Tracker Pro", 14, 20);
 
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(9);

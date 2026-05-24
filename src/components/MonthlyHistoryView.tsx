@@ -335,7 +335,7 @@ export function MonthlyHistoryView() {
             </form>
           </div>
           <div className="pt-4 border-t border-white/5 mt-4 text-[9px] text-slate-500 leading-tight">
-            ※ Nota: Los movimientos del fondo de ahorro se registran de manera automática en tu Libro Contable y participan en los análisis globales de la IA.
+            ※ Nota: Los movimientos del fondo de ahorro se registran de manera automática en tu Libro Contable y participan en los informes y análisis mensuales de tus finanzas.
           </div>
         </div>
 

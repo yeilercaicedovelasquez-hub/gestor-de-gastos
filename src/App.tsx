@@ -23,7 +23,7 @@ export default function App() {
         </div>
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-semibold text-slate-400 mt-4 tracking-widest uppercase font-mono">
-          Smart Expense Tracker AI
+          Smart Expense Tracker Pro
         </p>
         <span className="text-[10px] text-slate-600 mt-1">ESTABLECIENDO CONEXIÓN SEGURA...</span>
       </div>

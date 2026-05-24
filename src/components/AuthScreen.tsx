@@ -113,10 +113,10 @@ export function AuthScreen() {
             S'C ENGINEER
           </h2>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Smart Expense Tracker AI
+            Smart Expense Tracker Pro
           </h1>
           <p className="text-slate-400 text-sm mt-2 font-medium">
-            Control de gastos y consejero financiero autónomo con IA
+            Control de gastos y consejero de finanzas inteligente
           </p>
         </div>
 

@@ -62,7 +62,7 @@ export function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen }: SidebarP
                 <span className="text-[10px] font-mono font-bold tracking-wider text-indigo-400">S'C ENGINEER</span>
               </div>
               <h1 className="text-xs font-bold text-white tracking-widest uppercase leading-none mt-0.5">
-                Smart Tracker AI
+                Smart Tracker Pro
               </h1>
             </div>
           </div>
