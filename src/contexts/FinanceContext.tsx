@@ -192,15 +192,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Budget Recommendation API integration
+  // Gemini AI Recommendation API integration
   const requestFinancialAnalysis = async () => {
     if (!currentUser) return;
     const uid = currentUser.uid;
     
     setIsAnalyzing(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "";
-      const response = await fetch(`${baseUrl}/api/ai/analyze`, {
+      const response = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -211,7 +210,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || "Fallo en la consulta de análisis financiero");
+        throw new Error(errData.error || "Fallo en la consulta de análisis de IA");
       }
 
       const rawAnalysis = await response.json();
@@ -234,8 +233,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       await setDoc(newDocRef, fullRecommendation);
       setRecommendation(fullRecommendation);
     } catch (err: any) {
-      console.error("Budget Analysis fetching failed:", err);
-      // Fallback message if no records are registered yet
+      console.error("AI Analysis fetching failed:", err);
+      // Let's create a local fallback if the Gemini Key isn't fully set up yet so the UI remains pristine!
       if (expenses.length === 0 && incomes.length === 0) {
         throw new Error("No tienes ingresos ni gastos registrados para analizar. ¡Agrega algunos datos primero!");
       }

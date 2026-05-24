@@ -5,14 +5,12 @@ import { Sidebar } from "./components/Sidebar";
 import { DashboardView } from "./components/DashboardView";
 import { TransactionsView } from "./components/TransactionsView";
 import { MonthlyHistoryView } from "./components/MonthlyHistoryView";
-import { Menu, Sparkles } from "lucide-react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Menu, Sparkles, User, Brain } from "lucide-react";
 
 export default function App() {
   const { currentUser, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState<"dashboard" | "transactions" | "history">("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
 
   // loading fallback gateway
   if (loading) {
@@ -23,7 +21,7 @@ export default function App() {
         </div>
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-semibold text-slate-400 mt-4 tracking-widest uppercase font-mono">
-          Smart Expense Tracker Pro
+          Smart Expense Tracker AI
         </p>
         <span className="text-[10px] text-slate-600 mt-1">ESTABLECIENDO CONEXIÓN SEGURA...</span>
       </div>
@@ -35,22 +33,18 @@ export default function App() {
     return <AuthScreen />;
   }
 
-  // Derive active tab from React Router location paths
-  const currentPath = location.pathname.substring(1);
-  const activeTab = (["dashboard", "transactions", "history"].includes(currentPath)
-    ? currentPath
-    : "dashboard") as "dashboard" | "transactions" | "history";
-
-  // Active view router mapping using react-router-dom Routes
+  // Active view router mapping
   const renderActiveView = () => {
-    return (
-      <Routes>
-        <Route path="/dashboard" element={<DashboardView />} />
-        <Route path="/transactions" element={<TransactionsView />} />
-        <Route path="/history" element={<MonthlyHistoryView />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    );
+    switch (activeTab) {
+      case "dashboard":
+        return <DashboardView />;
+      case "history":
+        return <MonthlyHistoryView />;
+      case "transactions":
+        return <TransactionsView />;
+      default:
+        return <DashboardView />;
+    }
   };
 
   const getPageTitle = () => {
@@ -75,7 +69,7 @@ export default function App() {
       {/* 27-Line Secure Sidebar element navigation panel */}
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={(tabId) => navigate("/" + tabId)} 
+        setActiveTab={setActiveTab} 
         isOpen={sidebarOpen} 
         setIsOpen={setSidebarOpen} 
       />
